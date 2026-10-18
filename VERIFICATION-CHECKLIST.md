@@ -20,7 +20,9 @@ Status as of 18 Oct 2026. Ticked items are done in this repo.
 - [x] Confirmed v2 ingestion detail returns `status: "success"` with `summary.ingestion` counts (dataset 5068381, 3 records, 18 Oct 2026). Failure value still unseen.
 - [ ] Confirm v1-era dataset IDs (UUIDs) work with the v2 endpoints
 
-- [x] Batching + primary-key upsert: 1,203 records (A1-A3 re-sent + 1,200 new) pushed in 3 confirmed batches; dataset row count 1,203, no duplicates (18 Oct 2026)
+- [x] Batching: 1,200 records pushed in 3 confirmed batches (500/500/200); dataset row count 1,203 (18 Oct 2026)
+- [ ] Primary-key upsert: re-send the same 1,200 rows; row count must stay 1,203
+- [ ] Rejected-records check: push a row with text in the number column; node should stop with an error
 
 ## Publish
 - [ ] Create the GitHub repo and push

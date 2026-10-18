@@ -173,6 +173,26 @@ export class Databox implements INodeType {
 							'How long to keep checking a batch (after 3s, 10s, then every 60s) before giving up',
 					},
 					{
+						displayName: 'On Rejected Records',
+						name: 'onRejected',
+						type: 'options',
+						options: [
+							{
+								name: 'Stop With Error',
+								value: 'error',
+								description: 'Fail the node if Databox rejects any record; remaining batches are not sent',
+							},
+							{
+								name: 'Continue',
+								value: 'continue',
+								description: 'Show the rejected count on the output and send the next batch',
+							},
+						],
+						default: 'error',
+						description:
+							'What to do when Databox confirms a batch but rejected some of its records (only applies when waiting for confirmation)',
+					},
+					{
 						displayName: 'On Timeout',
 						name: 'onTimeout',
 						type: 'options',
@@ -514,6 +534,7 @@ async function pushRecords(
 	const maxWaitMs = ((options.maxWaitSeconds as number) ?? 600) * 1000;
 	const onTimeout = (options.onTimeout as string) ?? 'error';
 	const useIdempotencyKeys = options.useIdempotencyKeys === true;
+	const onRejected = (options.onRejected as string) ?? 'error';
 
 	if (!records.length) {
 		return [{ datasetId: decodeURIComponent(datasetId), batches: 0, recordsSent: 0, status: 'nothing_to_send' }];
@@ -595,6 +616,28 @@ async function pushRecords(
 			}
 			result.status = finalStatus;
 			result.ingestion = ingestion;
+
+			if (finalStatus === 'success') {
+				const counts =
+					((ingestion.summary as IDataObject | undefined)?.ingestion as IDataObject | undefined) ?? {};
+				const rejected = Number(counts.rejectedRecordCount ?? 0) || 0;
+				result.recordsAppended = Number(counts.appendedRecordCount ?? 0) || 0;
+				result.recordsOverwritten = Number(counts.overwrittenRecordCount ?? 0) || 0;
+				result.recordsRejected = rejected;
+				if (rejected > 0) {
+					if (onRejected === 'error') {
+						throw new NodeOperationError(
+							this.getNode(),
+							`Databox rejected ${rejected} of ${batches[b].length} records in batch ${b + 1} of ${batches.length} (ingestion ${ingestionId}). Remaining batches were not sent.`,
+							{
+								itemIndex,
+								description: `Rejection details: ${JSON.stringify(ingestion.errors ?? 'none returned')}. Usually a value that does not match the column's data type, or a missing column. Set Options > On Rejected Records to Continue to send the rest anyway.`,
+							},
+						);
+					}
+					result.status = 'success_with_rejections';
+				}
+			}
 		}
 		results.push(result);
 	}
