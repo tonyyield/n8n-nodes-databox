@@ -597,9 +597,10 @@ async function pushRecords(
 					break;
 				}
 				if (INGESTION_FAILURE_STATUSES.includes(status)) {
+					const reason = summariseIngestionErrors(ingestion.errors);
 					throw new NodeOperationError(
 						this.getNode(),
-						`Databox ingestion ${ingestionId} for batch ${b + 1} of ${batches.length} ended with status "${status}". Remaining batches were not sent.`,
+						`Databox ingestion ${ingestionId} for batch ${b + 1} of ${batches.length} ended with status "${status}"${reason ? `: ${reason}` : ' (Databox gave no reason)'}. Remaining batches were not sent.`,
 						{ itemIndex, description: JSON.stringify(ingestion.errors ?? ingestion) },
 					);
 				}
@@ -642,4 +643,17 @@ async function pushRecords(
 		results.push(result);
 	}
 	return results;
+}
+
+/** Turn the v2 ingestion `errors` array (objects or strings) into one short readable line. */
+function summariseIngestionErrors(errors: unknown): string {
+	if (!Array.isArray(errors) || !errors.length) return '';
+	const parts = errors.slice(0, 5).map((e) => {
+		if (typeof e === 'string') return e;
+		const o = (e ?? {}) as IDataObject;
+		return [o.message, o.field ? `(field: ${String(o.field)})` : '', o.code ? `[${String(o.code)}]` : '']
+			.filter(Boolean)
+			.join(' ') || JSON.stringify(o);
+	});
+	return parts.join('; ') + (errors.length > 5 ? `; and ${errors.length - 5} more` : '');
 }
