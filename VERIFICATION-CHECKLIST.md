@@ -27,6 +27,9 @@ Status as of 18 Oct 2026. Ticked items are done in this repo.
 - [x] Validate Records First: bad value stopped before sending, naming record 1, column "amount" (18 Oct 2026)
 - [x] Unknown columns: Databox ACCEPTS them and silently adds a new column (columnCount 2 -> 3). Validator blocks them by default; Options > Unknown Columns > Allow to add on purpose (18 Oct 2026)
 
+- [x] Missing columns: Databox fails the batch (`invalid_input`, "Column ... is required by schema") when a record omits any dataset column, including ones it auto-added. Validator now checks for this before sending (18 Oct 2026)
+- [ ] Confirm a column sent as `null` counts as present
+
 ## Publish
 - [ ] Create the GitHub repo and push
 - [ ] npm: set up Trusted Publishing (OIDC) for `publish.yml`, or add an `NPM_TOKEN` secret

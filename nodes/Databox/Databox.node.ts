@@ -738,6 +738,13 @@ export function validateRecords(
 			problems.push(`record ${n} is not an object`);
 			return;
 		}
+		for (const column of columns) {
+			if (!(column.id in record)) {
+				problems.push(
+					`record ${n}: missing column "${column.id}" (Databox requires every dataset column on every record; send null if there is no value)`,
+				);
+			}
+		}
 		for (const key of primaryKey) {
 			const v = record[key];
 			if (v === undefined || v === null || v === '') {
