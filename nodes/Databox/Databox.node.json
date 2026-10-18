@@ -1,0 +1,14 @@
+{
+	"node": "n8n-nodes-databox.databox",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Analytics", "Data & Storage"],
+	"resources": {
+		"credentialDocumentation": [
+			{ "url": "https://developers.databox.com/docs/api/authentication" }
+		],
+		"primaryDocumentation": [
+			{ "url": "https://developers.databox.com/docs/api/overview" }
+		]
+	}
+}
