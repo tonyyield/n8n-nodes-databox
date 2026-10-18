@@ -38,8 +38,49 @@ export async function databoxApiRequest(
 			options,
 		)) as IDataObject;
 	} catch (error) {
-		throw new NodeApiError(this.getNode(), error as JsonObject);
+		const details = extractDataboxErrors(error);
+		throw new NodeApiError(this.getNode(), error as JsonObject, {
+			...(details ? { message: `Databox: ${details}` } : {}),
+			description: `${method} ${endpoint}${details ? ` - ${details}` : ''}`,
+		});
 	}
+}
+
+/** Databox returns { status: 'error', errors: [{ code, message, field, type }] }. Surface it. */
+function extractDataboxErrors(error: unknown): string | undefined {
+	const e = error as {
+		response?: { data?: unknown; body?: unknown };
+		cause?: { response?: { data?: unknown; body?: unknown } };
+		error?: unknown;
+	};
+	const candidates = [
+		e?.response?.data,
+		e?.response?.body,
+		e?.cause?.response?.data,
+		e?.cause?.response?.body,
+		e?.error,
+	];
+	for (const c of candidates) {
+		let body = c;
+		if (typeof body === 'string') {
+			try {
+				body = JSON.parse(body);
+			} catch {
+				continue;
+			}
+		}
+		const errors = (body as { errors?: Array<Record<string, unknown>> })?.errors;
+		if (Array.isArray(errors) && errors.length) {
+			return errors
+				.map((x) =>
+					[x.message, x.field ? `(field: ${String(x.field)})` : '', x.code ? `[${String(x.code)}]` : '']
+						.filter(Boolean)
+						.join(' '),
+				)
+				.join('; ');
+		}
+	}
+	return undefined;
 }
 
 /** v2 responses nest the payload under `data`. */
