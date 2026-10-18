@@ -20,6 +20,8 @@ Status as of 18 Oct 2026. Ticked items are done in this repo.
 - [x] Confirmed v2 ingestion detail returns `status: "success"` with `summary.ingestion` counts (dataset 5068381, 3 records, 18 Oct 2026). Failure value still unseen.
 - [ ] Confirm v1-era dataset IDs (UUIDs) work with the v2 endpoints
 
+- [x] Batching + primary-key upsert: 1,203 records (A1-A3 re-sent + 1,200 new) pushed in 3 confirmed batches; dataset row count 1,203, no duplicates (18 Oct 2026)
+
 ## Publish
 - [ ] Create the GitHub repo and push
 - [ ] npm: set up Trusted Publishing (OIDC) for `publish.yml`, or add an `NPM_TOKEN` secret
