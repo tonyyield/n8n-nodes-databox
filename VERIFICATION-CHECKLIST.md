@@ -24,8 +24,8 @@ Status as of 18 Oct 2026. Ticked items are done in this repo.
 - [x] Primary-key upsert: same 1,200 rows re-sent; 500/500/200 overwritten, 0 appended, row count stayed 1,203
 - [x] Bad data: a row with text in a number column makes Databox fail the WHOLE batch (`status: "failed"`), not reject one row; node stops correctly (18 Oct 2026)
 
-- [ ] Validate Records First: push the Test 5 bad row; node should stop BEFORE sending and name record 1, column "amount"
-- [ ] Unknown columns: confirm whether Databox rejects or ignores a column not in the schema (the validator currently flags it)
+- [x] Validate Records First: bad value stopped before sending, naming record 1, column "amount" (18 Oct 2026)
+- [x] Unknown columns: Databox ACCEPTS them and silently adds a new column (columnCount 2 -> 3). Validator blocks them by default; Options > Unknown Columns > Allow to add on purpose (18 Oct 2026)
 
 ## Publish
 - [ ] Create the GitHub repo and push

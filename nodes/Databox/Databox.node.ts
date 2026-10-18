@@ -212,6 +212,26 @@ export class Databox implements INodeType {
 						description: 'What to do when a batch is still processing after the max wait',
 					},
 					{
+						displayName: 'Unknown Columns',
+						name: 'unknownColumns',
+						type: 'options',
+						options: [
+							{
+								name: 'Stop With Error',
+								value: 'error',
+								description: 'Treat a column that is not in the dataset as a mistake (e.g. a typo) and send nothing',
+							},
+							{
+								name: 'Allow (Databox Adds the Column)',
+								value: 'allow',
+								description: 'Send it anyway: Databox automatically adds the new column to the dataset',
+							},
+						],
+						default: 'error',
+						description:
+							'What to do with a record field that is not a column in the dataset (only applies when Validate Records First is on). Databox does not reject unknown fields: it silently adds them as new columns.',
+					},
+					{
 						displayName: 'Use Idempotency Keys',
 						name: 'useIdempotencyKeys',
 						type: 'boolean',
@@ -558,6 +578,7 @@ async function pushRecords(
 				dataType: String(c.dataType ?? 'string'),
 			})),
 			((schema.primaryKey as string[]) ?? []).map(String),
+			options.unknownColumns !== 'allow',
 		);
 		if (problems.length) {
 			const shown = problems.slice(0, 10);
@@ -702,6 +723,7 @@ export function validateRecords(
 	records: IDataObject[],
 	columns: Array<{ id: string; dataType: string }>,
 	primaryKey: string[],
+	rejectUnknownColumns = true,
 ): string[] {
 	const problems: string[] = [];
 	const types = new Map(columns.map((c) => [c.id, c.dataType.toLowerCase()]));
@@ -725,7 +747,11 @@ export function validateRecords(
 		for (const [key, value] of Object.entries(record)) {
 			const type = types.get(key);
 			if (type === undefined) {
-				problems.push(`record ${n}: column "${key}" does not exist in the dataset`);
+				if (rejectUnknownColumns) {
+					problems.push(
+						`record ${n}: column "${key}" does not exist in the dataset (Databox would add it as a new column; check for a typo, or set Unknown Columns to Allow)`,
+					);
+				}
 				continue;
 			}
 			if (value === null || value === undefined || value === '') continue;

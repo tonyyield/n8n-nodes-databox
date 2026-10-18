@@ -15,7 +15,7 @@ It uses the Databox API v2 (`https://api.databox.com/v2`).
 | Ingestion | Get          | Gets the status of one ingestion. |
 | Ingestion | Get Many     | Lists a dataset's ingestions. |
 
-Push Records also **checks every record against the dataset's column types before sending** (on by default; Options > Validate Records First). Databox fails a whole batch on one bad value without saying which record caused it, so the node stops before sending and names the exact record and column: text in a number column, an unparseable date, an empty primary key, an unknown column, or a nested object. A batch where Databox rejects records also stops the node by default (Options > On Rejected Records).
+Push Records also **checks every record against the dataset's column types before sending** (on by default; Options > Validate Records First). Databox fails a whole batch on one bad value without saying which record caused it, so the node stops before sending and names the exact record and column: text in a number column, an unparseable date, an empty primary key, an unknown column (Databox would otherwise silently add it as a new column; set Options > Unknown Columns to Allow to add columns on purpose), or a nested object. A batch where Databox rejects records also stops the node by default (Options > On Rejected Records).
 
 Deliberately left out: **Purge** and **Delete dataset**. Use a primary key on the dataset so re-sent records update in place, rather than purging and reloading.
 
