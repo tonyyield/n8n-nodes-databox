@@ -15,9 +15,9 @@ Status as of 18 Oct 2026. Ticked items are done in this repo.
 - [ ] Replace the placeholder icons (`nodes/Databox/databox.svg`, `databox.dark.svg`) with the official Databox logo, with Databox's permission
 
 ## Testing
-- [ ] Run `npm run dev` (local n8n with the node loaded), or install on a self-hosted instance
-- [ ] Test every operation against a **throwaway** Databox dataset, not a live RT one
-- [ ] Confirm the ingestion `status` values v2 returns (see open question below)
+- [x] Run `npm run dev` (local n8n with the node loaded) - n8n 2.43.7 on Windows, 18 Oct 2026
+- [ ] Test every operation against a **throwaway** Databox dataset, not a live RT one (Create, Push and dataset picker passed on 18 Oct; Get, Get Many and Ingestion Get/Get Many still to do)
+- [x] Confirmed v2 ingestion detail returns `status: "success"` with `summary.ingestion` counts (dataset 5068381, 3 records, 18 Oct 2026). Failure value still unseen.
 - [ ] Confirm v1-era dataset IDs (UUIDs) work with the v2 endpoints
 
 ## Publish
