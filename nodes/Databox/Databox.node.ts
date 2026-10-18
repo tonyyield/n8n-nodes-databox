@@ -220,6 +220,14 @@ export class Databox implements INodeType {
 							'Whether to send an Idempotency-Key per batch (execution + dataset + batch number), so a retried request is not ingested twice',
 					},
 					{
+						displayName: 'Validate Records First',
+						name: 'validateRecords',
+						type: 'boolean',
+						default: true,
+						description:
+							'Whether to check every record against the dataset\'s column types before sending anything. Databox fails a whole batch on one bad value without saying which, so this stops early and names the exact record and column.',
+					},
+					{
 						displayName: 'Wait for Confirmation',
 						name: 'waitForCompletion',
 						type: 'boolean',
@@ -540,6 +548,31 @@ async function pushRecords(
 		return [{ datasetId: decodeURIComponent(datasetId), batches: 0, recordsSent: 0, status: 'nothing_to_send' }];
 	}
 
+	if (options.validateRecords !== false) {
+		const schemaResponse = await databoxApiRequest.call(this, 'GET', `/v2/datasets/${datasetId}/schema`);
+		const schema = unwrap(schemaResponse);
+		const problems = validateRecords(
+			records,
+			((schema.items as IDataObject[]) ?? []).map((c) => ({
+				id: String(c.id),
+				dataType: String(c.dataType ?? 'string'),
+			})),
+			((schema.primaryKey as string[]) ?? []).map(String),
+		);
+		if (problems.length) {
+			const shown = problems.slice(0, 10);
+			throw new NodeOperationError(
+				this.getNode(),
+				`${problems.length} problem${problems.length === 1 ? '' : 's'} found before sending to Databox (nothing was sent): ${shown.join('; ')}${problems.length > shown.length ? `; and ${problems.length - shown.length} more` : ''}`,
+				{
+					itemIndex,
+					description:
+						'Fix the source data, or turn off Options > Validate Records First to send anyway. Record numbers start at 1, in the order the records were received.',
+				},
+			);
+		}
+	}
+
 	const results: IDataObject[] = [];
 	const batches = chunk(records, batchSize);
 
@@ -656,4 +689,61 @@ function summariseIngestionErrors(errors: unknown): string {
 			.join(' ') || JSON.stringify(o);
 	});
 	return parts.join('; ') + (errors.length > 5 ? `; and ${errors.length - 5} more` : '');
+}
+
+const NUMERIC_TYPES = ['number', 'currency', 'percentage', 'duration'];
+
+/**
+ * Check records against the dataset schema. Returns readable problems, e.g.
+ * 'record 3, column "amount": "abc" is not a number'. Empty values (null/undefined/'') are allowed,
+ * except in primary key columns.
+ */
+export function validateRecords(
+	records: IDataObject[],
+	columns: Array<{ id: string; dataType: string }>,
+	primaryKey: string[],
+): string[] {
+	const problems: string[] = [];
+	const types = new Map(columns.map((c) => [c.id, c.dataType.toLowerCase()]));
+	const show = (v: unknown) => {
+		const s = typeof v === 'string' ? `"${v}"` : JSON.stringify(v);
+		return s && s.length > 40 ? `${s.slice(0, 37)}...` : s;
+	};
+
+	records.forEach((record, index) => {
+		const n = index + 1;
+		if (record === null || typeof record !== 'object' || Array.isArray(record)) {
+			problems.push(`record ${n} is not an object`);
+			return;
+		}
+		for (const key of primaryKey) {
+			const v = record[key];
+			if (v === undefined || v === null || v === '') {
+				problems.push(`record ${n}: primary key column "${key}" is empty`);
+			}
+		}
+		for (const [key, value] of Object.entries(record)) {
+			const type = types.get(key);
+			if (type === undefined) {
+				problems.push(`record ${n}: column "${key}" does not exist in the dataset`);
+				continue;
+			}
+			if (value === null || value === undefined || value === '') continue;
+			if (typeof value === 'object') {
+				problems.push(`record ${n}, column "${key}": nested objects/arrays are not allowed`);
+				continue;
+			}
+			if (NUMERIC_TYPES.includes(type)) {
+				const num = typeof value === 'number' ? value : Number(String(value).trim());
+				if (typeof value === 'boolean' || !Number.isFinite(num)) {
+					problems.push(`record ${n}, column "${key}": ${show(value)} is not a number`);
+				}
+			} else if (type === 'datetime') {
+				if (typeof value === 'boolean' || Number.isNaN(new Date(value as string | number).getTime())) {
+					problems.push(`record ${n}, column "${key}": ${show(value)} is not a valid date/time`);
+				}
+			}
+		}
+	});
+	return problems;
 }
