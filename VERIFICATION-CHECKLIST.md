@@ -16,12 +16,12 @@ Status as of 18 Oct 2026. Ticked items are done in this repo.
 
 ## Testing
 - [x] Run `npm run dev` (local n8n with the node loaded) - n8n 2.43.7 on Windows, 18 Oct 2026
-- [ ] Test every operation against a **throwaway** Databox dataset, not a live RT one (Create, Push and dataset picker passed on 18 Oct; Get, Get Many and Ingestion Get/Get Many still to do)
+- [x] Every operation tested against a throwaway dataset (5068381) on 18 Oct 2026: Create, Push, Get, Get Many (54 items, multi-page), Ingestion Get Many (11), dataset picker
 - [x] Confirmed v2 ingestion detail returns `status: "success"` with `summary.ingestion` counts (dataset 5068381, 3 records, 18 Oct 2026). Failure value confirmed as `"failed"`.
-- [ ] Confirm v1-era dataset IDs (UUIDs) work with the v2 endpoints
+- [ ] Confirm v1-era dataset IDs (UUIDs) work with the v2 endpoints (only matters for switching existing RT flows to this node)
 
 - [x] Batching: 1,200 records pushed in 3 confirmed batches (500/500/200); dataset row count 1,203 (18 Oct 2026)
-- [ ] Primary-key upsert: re-send the same 1,200 rows; row count must stay 1,203
+- [x] Primary-key upsert: same 1,200 rows re-sent; 500/500/200 overwritten, 0 appended, row count stayed 1,203
 - [x] Bad data: a row with text in a number column makes Databox fail the WHOLE batch (`status: "failed"`), not reject one row; node stops correctly (18 Oct 2026)
 
 ## Publish
